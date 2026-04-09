@@ -1,0 +1,47 @@
+# Entorno virtual de Python
+desercion/
+venv/
+.venv/
+env/
+.env
+
+# Cache de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Archivos del IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentación
+README.md
+*.md
+
+# Logs
+*.log
+logs/
+
+# Archivos temporales
+.tmp/
+temp/
+
+# Archivos de test
+test/
+tests/
+*test.py
+*_test.py

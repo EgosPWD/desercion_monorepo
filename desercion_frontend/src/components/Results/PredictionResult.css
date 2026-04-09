@@ -1,0 +1,109 @@
+/* ===================================
+   PREDICTION RESULT — EDITORIAL DARK
+   =================================== */
+
+.result-container {
+  margin-top: 2rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.result-content {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.result-text {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* ── Probability ── */
+
+.probability-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.probability-label {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0;
+}
+
+.probability-value {
+  font-size: 4rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+/* ── Detailed Probabilities ── */
+
+.detailed-probabilities {
+  border-top: 1px solid var(--border);
+  padding-top: 1.25rem;
+}
+
+.probabilities-title {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.probabilities-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.probability-item {
+  background: var(--bg-elevated);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.probability-item .probability-label {
+  font-size: 0.5625rem;
+}
+
+.probability-item .probability-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+/* ── User info ── */
+
+.user-info {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.user-info .font-semibold {
+  color: var(--text-secondary);
+}

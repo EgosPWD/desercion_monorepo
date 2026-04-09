@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: desercion
+  labels:
+    app.kubernetes.io/name: desercion
+    app.kubernetes.io/part-of: desercion-platform

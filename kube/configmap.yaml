@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: desercion-config
+  namespace: desercion
+data:
+  # Backend
+  PORT: "8182"
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+  DB_NAME: "desercion_db"
+  DB_USER: "desercion_user"
+  JWT_EXPIRE_MINUTES: "120"
+  CORS_ORIGINS: "http://desercion.local,http://api.desercion.local,http://localhost:8080,http://127.0.0.1:8080"
+
+  # Frontend
+  VITE_API_BASE_URL: "http://api.desercion.local"
+  VITE_AUTH_STORAGE_KEY: "desercion_auth"
+  VITE_FRONTEND_PORT: "3020"
+  VITE_APP_ENV: "production"
+  FRONTEND_CONTAINER_PORT: "3020"
+
+  # PostgreSQL
+  POSTGRES_DB: "desercion_db"

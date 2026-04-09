@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: desercion_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-desercion_db}
+      POSTGRES_USER: ${POSTGRES_USER:-desercion_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-desercion_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - desercion_net
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-desercion_user} -d ${POSTGRES_DB:-desercion_db}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./desercion_api
+      dockerfile: Dockerfile
+    container_name: desercion_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: ${BACKEND_PORT:-8182}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-desercion_db}
+      DB_USER: ${DB_USER:-desercion_user}
+      DB_PASSWORD: ${DB_PASSWORD:-desercion_password}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-3792f5ded446122f59da372c5ea0ce39b72fbfc7c94af4536de0b53c8f94ae03}
+      CORS_ORIGINS: "*"
+    ports:
+      - "${BACKEND_PORT:-8182}:${BACKEND_PORT:-8182}"
+    networks:
+      - desercion_net
+
+  frontend:
+    build:
+      context: ./desercion_frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:8182
+    container_name: desercion_frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "${FRONTEND_PORT:-3020}:${VITE_FRONTEND_PORT:-3020}"
+    networks:
+      - desercion_net
+
+volumes:
+  postgres_data:
+
+networks:
+  desercion_net:
+    driver: bridge

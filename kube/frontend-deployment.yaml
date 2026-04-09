@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: desercion-frontend
+  labels:
+    app: desercion-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: desercion-frontend
+  template:
+    metadata:
+      labels:
+        app: desercion-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: desercion_frontend:optimized
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3020
+              name: http
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: desercion-config
+                  key: FRONTEND_CONTAINER_PORT
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi

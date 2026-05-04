@@ -225,3 +225,18 @@ export interface HistorialResponse {
   offset: number;
   predicciones: HistorialPrediccion[];
 }
+
+export interface DashboardStatsResponse {
+  usuario: string;
+  resumen: {
+    total_predicciones: number;
+    total_abandono: number;
+    total_graduacion: number;
+    porcentaje_abandono: number;
+    promedio_probabilidad_abandono: number;
+  };
+  por_endpoint: Array<{
+    endpoint: string;
+    total: number;
+  }>;
+}

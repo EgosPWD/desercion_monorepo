@@ -125,7 +125,7 @@
         {
           "datasource": "Loki",
           "directive": "range",
-          "expr": "{service=\"backend\"} | level=\"error\"",
+          "expr": "{service=\"backend\"} |~ \"ERROR| 5[0-9][0-9] \"",
           "refId": "A"
         }
       ],
@@ -179,7 +179,7 @@
               }
             ]
           },
-          "unit": "percent"
+          "unit": "reqps"
         },
         "overrides": []
       },
@@ -206,12 +206,12 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "sum(rate(container_cpu_usage_seconds_total{name=~\".*desercion_backend.*\"}[5m])) * 100",
-          "legendFormat": "CPU",
+          "expr": "sum(rate(desercion_http_requests_total{path!=\"/metrics\"}[1m]))",
+          "legendFormat": "RPS",
           "refId": "A"
         }
       ],
-      "title": "Backend CPU %",
+      "title": "HTTP Requests/s",
       "type": "timeseries"
     },
     {
@@ -261,7 +261,7 @@
               }
             ]
           },
-          "unit": "bytes"
+          "unit": "reqps"
         },
         "overrides": []
       },
@@ -288,12 +288,12 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "sum(container_memory_usage_bytes{name=~\".*desercion_backend.*\"})",
-          "legendFormat": "Memory",
+          "expr": "sum(rate(desercion_http_requests_total{status=~\"4..|5..\",path!=\"/metrics\"}[5m]))",
+          "legendFormat": "Error RPS",
           "refId": "A"
         }
       ],
-      "title": "Backend Memory",
+      "title": "HTTP Error Rate (4xx/5xx)",
       "type": "timeseries"
     },
     {
@@ -343,7 +343,7 @@
               }
             ]
           },
-          "unit": "Bps"
+          "unit": "s"
         },
         "overrides": []
       },
@@ -370,18 +370,18 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "sum(rate(container_network_receive_bytes_total{name=~\".*desercion_backend.*\"}[5m]))",
-          "legendFormat": "RX",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(desercion_http_request_duration_seconds_bucket{path!=\"/metrics\"}[5m])))",
+          "legendFormat": "p50",
           "refId": "A"
         },
         {
           "datasource": "Prometheus",
-          "expr": "sum(rate(container_network_transmit_bytes_total{name=~\".*desercion_backend.*\"}[5m]))",
-          "legendFormat": "TX",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(desercion_http_request_duration_seconds_bucket{path!=\"/metrics\"}[5m])))",
+          "legendFormat": "p95",
           "refId": "B"
         }
       ],
-      "title": "Backend Network",
+      "title": "HTTP Latency",
       "type": "timeseries"
     },
     {
@@ -409,7 +409,7 @@
               }
             ]
           },
-          "unit": "percent"
+          "unit": "short"
         },
         "overrides": []
       },
@@ -438,11 +438,11 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "sum(rate(container_cpu_usage_seconds_total{name=~\".*desercion_backend.*\"}[5m])) * 100",
+          "expr": "sum(increase(desercion_http_requests_total{path!=\"/metrics\"}[5m]))",
           "refId": "A"
         }
       ],
-      "title": "CPU %",
+      "title": "Requests (5m)",
       "type": "stat"
     },
     {
@@ -470,7 +470,7 @@
               }
             ]
           },
-          "unit": "bytes"
+          "unit": "percentunit"
         },
         "overrides": []
       },
@@ -499,11 +499,11 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "sum(container_memory_usage_bytes{name=~\".*desercion_backend.*\"})",
+          "expr": "(sum(rate(desercion_http_requests_total{status=~\"2..\",path!=\"/metrics\"}[5m])) / clamp_min(sum(rate(desercion_http_requests_total{path!=\"/metrics\"}[5m])), 0.0001))",
           "refId": "A"
         }
       ],
-      "title": "Memory",
+      "title": "2xx Success Ratio",
       "type": "stat"
     },
     {
@@ -551,11 +551,11 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "time() - max(container_last_seen{name=~\".*desercion_backend.*\"})",
+          "expr": "sum(rate(desercion_predictions_total[5m]))",
           "refId": "A"
         }
       ],
-      "title": "Restarts",
+      "title": "Predictions/s",
       "type": "stat"
     },
     {
@@ -607,7 +607,7 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "count(container_last_seen{name=~\".*desercion_backend.*\"})",
+          "expr": "max(up{job=\"backend\"})",
           "refId": "A"
         }
       ],

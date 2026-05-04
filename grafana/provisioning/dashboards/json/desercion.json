@@ -63,11 +63,11 @@
         {
           "datasource": "Loki",
           "directive": "range",
-          "expr": "{app=\"desercion\"}",
+          "expr": "{service=\"backend\"}",
           "refId": "A"
         }
       ],
-      "title": "App Logs",
+      "title": "Backend Logs",
       "type": "logs"
     },
     {
@@ -111,11 +111,11 @@
         {
           "datasource": "Loki",
           "directive": "range",
-          "expr": "{app=\"desercion\"} | level=\"error\"",
+          "expr": "{service=\"frontend\"}",
           "refId": "A"
         }
       ],
-      "title": "Error Logs",
+      "title": "Frontend Logs",
       "type": "logs"
     },
     {
@@ -165,7 +165,7 @@
               }
             ]
           },
-          "unit": "percent"
+          "unit": "reqps"
         },
         "overrides": []
       },
@@ -192,11 +192,11 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "sum by (name) (rate(container_cpu_usage_seconds_total{name=~\".*desercion_(backend|frontend).*\"}[5m])) * 100",
+          "expr": "sum(rate(desercion_http_requests_total{path!=\"/metrics\"}[1m]))",
           "refId": "A"
         }
       ],
-      "title": "CPU Usage (%)",
+      "title": "Backend HTTP RPS",
       "type": "timeseries"
     },
     {
@@ -246,7 +246,7 @@
               }
             ]
           },
-          "unit": "bytes"
+          "unit": "s"
         },
         "overrides": []
       },
@@ -273,11 +273,11 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "container_memory_usage_bytes{name=~\".*desercion_(backend|frontend).*\"}",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(desercion_http_request_duration_seconds_bucket{path!=\"/metrics\"}[5m])))",
           "refId": "A"
         }
       ],
-      "title": "Memory Usage",
+      "title": "Backend Latency p95",
       "type": "timeseries"
     },
     {
@@ -327,7 +327,7 @@
               }
             ]
           },
-          "unit": "Bps"
+          "unit": "reqps"
         },
         "overrides": []
       },
@@ -354,11 +354,11 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "sum by (name) (rate(container_network_receive_bytes_total{name=~\".*desercion_(backend|frontend).*\"}[5m]))",
+          "expr": "sum by (status) (rate(desercion_http_requests_total{path!=\"/metrics\"}[5m]))",
           "refId": "A"
         }
       ],
-      "title": "Network RX",
+      "title": "HTTP Rate by Status",
       "type": "timeseries"
     },
     {
@@ -408,7 +408,7 @@
               }
             ]
           },
-          "unit": "Bps"
+          "unit": "reqps"
         },
         "overrides": []
       },
@@ -435,11 +435,11 @@
       "targets": [
         {
           "datasource": "Prometheus",
-          "expr": "sum by (name) (rate(container_network_transmit_bytes_total{name=~\".*desercion_(backend|frontend).*\"}[5m]))",
+          "expr": "sum(rate(desercion_http_requests_total{status=~\"2..\",path!=\"/metrics\"}[5m]))",
           "refId": "A"
         }
       ],
-      "title": "Network TX",
+      "title": "HTTP 2xx Rate",
       "type": "timeseries"
     },
     {

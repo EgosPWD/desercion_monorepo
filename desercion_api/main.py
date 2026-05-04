@@ -10,12 +10,14 @@ import numpy as np
 import pandas as pd
 import shap
 from database import Prediccion, SessionLocal, Usuario, get_db, init_db
-from fastapi import Depends, FastAPI, HTTPException, Query, status
+from fastapi import Depends, FastAPI, HTTPException, Query, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 # --- Configuración de logging estructurado ---
@@ -230,6 +232,37 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+REQUEST_COUNT = Counter(
+    "desercion_http_requests_total",
+    "Total de requests HTTP por método, path y status",
+    ["method", "path", "status"],
+)
+REQUEST_LATENCY = Histogram(
+    "desercion_http_request_duration_seconds",
+    "Latencia de requests HTTP por método y path",
+    ["method", "path"],
+)
+PREDICTION_COUNT = Counter(
+    "desercion_predictions_total",
+    "Total de predicciones realizadas por endpoint y resultado",
+    ["endpoint", "resultado"],
+)
+
+
+@app.middleware("http")
+async def prometheus_metrics_middleware(request, call_next):
+    start_time = datetime.utcnow()
+    response = await call_next(request)
+    elapsed = (datetime.utcnow() - start_time).total_seconds()
+    path = request.url.path
+
+    REQUEST_COUNT.labels(
+        method=request.method, path=path, status=str(response.status_code)
+    ).inc()
+    REQUEST_LATENCY.labels(method=request.method, path=path).observe(elapsed)
+
+    return response
 
 
 # --- Modelos de autenticación ---
@@ -587,12 +620,16 @@ def inicio():
                 "POST /analizar/factores-riesgo - Factores de riesgo individuales",
                 "POST /analizar/por-carrera - Análisis por carrera",
                 "POST /estadisticas/general - Estadísticas generales",
+                "GET /estadisticas/dashboard - Resumen persistido para dashboard",
             ],
             "recomendaciones": ["POST /recomendaciones - Sugerencias de intervención"],
             "historial": [
                 "GET /historial - Historial del usuario autenticado",
             ],
-            "sistema": ["GET /salud - Estado del sistema"],
+            "sistema": [
+                "GET /salud - Estado del sistema",
+                "GET /metrics - Métricas Prometheus",
+            ],
         },
     }
 
@@ -610,6 +647,11 @@ def salud_sistema():
     }
 
 
+@app.get("/metrics")
+def metrics():
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
 @app.post("/predecir")
 def predecir(datos: DatosEntrada, usuario: Usuario = Depends(get_current_user)):
     if modelo is None or scaler is None:
@@ -622,6 +664,7 @@ def predecir(datos: DatosEntrada, usuario: Usuario = Depends(get_current_user)):
         X_scaled = scaler.transform(df_entrada)
         pred = int(modelo.predict(X_scaled)[0])
         resultado = "Se gradúa" if pred == 0 else "Abandona"
+        PREDICTION_COUNT.labels(endpoint="/predecir", resultado=resultado).inc()
 
         probabilidad_resultado = None
         probas = None
@@ -736,6 +779,9 @@ def predecir_lote(lote: LoteEstudiantes, usuario: Usuario = Depends(get_current_
             datos_dict = estudiante.dict()
             id_estudiante = datos_dict.pop("id_estudiante")
             prediccion = procesar_prediccion_individual(datos_dict)
+            PREDICTION_COUNT.labels(
+                endpoint="/predecir/lote", resultado=prediccion["resultado"]
+            ).inc()
 
             resultados.append(
                 {
@@ -1241,6 +1287,80 @@ def obtener_historial(
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Error al obtener historial: {str(e)}"
+        )
+    finally:
+        db.close()
+
+
+@app.get("/estadisticas/dashboard")
+def estadisticas_dashboard(usuario: Usuario = Depends(get_current_user)):
+    db = SessionLocal()
+    try:
+        total_predicciones = (
+            db.query(func.count(Prediccion.id))
+            .filter(Prediccion.usuario_id == usuario.id)
+            .scalar()
+            or 0
+        )
+        total_abandono = (
+            db.query(func.count(Prediccion.id))
+            .filter(
+                Prediccion.usuario_id == usuario.id,
+                Prediccion.resultado == "Abandona",
+            )
+            .scalar()
+            or 0
+        )
+        total_graduacion = (
+            db.query(func.count(Prediccion.id))
+            .filter(
+                Prediccion.usuario_id == usuario.id,
+                Prediccion.resultado == "Se gradúa",
+            )
+            .scalar()
+            or 0
+        )
+        promedio_abandono = (
+            db.query(func.avg(Prediccion.probabilidad_abandono))
+            .filter(
+                Prediccion.usuario_id == usuario.id,
+                Prediccion.probabilidad_abandono.isnot(None),
+            )
+            .scalar()
+        )
+
+        by_endpoint_rows = (
+            db.query(Prediccion.endpoint, func.count(Prediccion.id))
+            .filter(Prediccion.usuario_id == usuario.id)
+            .group_by(Prediccion.endpoint)
+            .all()
+        )
+
+        endpoints = [
+            {"endpoint": endpoint, "total": total}
+            for endpoint, total in by_endpoint_rows
+        ]
+
+        return {
+            "usuario": usuario.username,
+            "resumen": {
+                "total_predicciones": int(total_predicciones),
+                "total_abandono": int(total_abandono),
+                "total_graduacion": int(total_graduacion),
+                "porcentaje_abandono": round(
+                    (total_abandono / total_predicciones) * 100, 2
+                )
+                if total_predicciones > 0
+                else 0,
+                "promedio_probabilidad_abandono": round(float(promedio_abandono), 3)
+                if promedio_abandono is not None
+                else 0,
+            },
+            "por_endpoint": endpoints,
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Error al generar dashboard: {str(e)}"
         )
     finally:
         db.close()

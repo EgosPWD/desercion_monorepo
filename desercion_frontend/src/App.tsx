@@ -2,10 +2,11 @@ import { useState } from "react";
 import PrediccionForm from "./components/PrediccionForm";
 import AnalisisMasivo from "./components/AnalisisMasivo";
 import HistorialPredicciones from "./components/HistorialPredicciones";
+import DashboardObservabilidad from "./components/DashboardObservabilidad";
 import { useAuth } from "./auth/AuthContext";
 import "./App.css";
 
-type Vista = "individual" | "masivo" | "historial";
+type Vista = "individual" | "masivo" | "historial" | "dashboard";
 type AuthMode = "login" | "register";
 
 function AuthScreen() {
@@ -354,6 +355,15 @@ export default function App() {
             >
               HISTORIAL
             </button>
+
+            <button
+              className={`sidebar-nav-item sidebar-nav-btn ${
+                vistaActual === "dashboard" ? "active" : ""
+              }`}
+              onClick={() => setVistaActual("dashboard")}
+            >
+              DASHBOARD
+            </button>
           </nav>
 
           <div className="sidebar-footer">
@@ -366,6 +376,7 @@ export default function App() {
           {vistaActual === "individual" && <PrediccionForm />}
           {vistaActual === "masivo" && <AnalisisMasivo />}
           {vistaActual === "historial" && <HistorialPredicciones />}
+          {vistaActual === "dashboard" && <DashboardObservabilidad />}
         </main>
       </div>
     </div>

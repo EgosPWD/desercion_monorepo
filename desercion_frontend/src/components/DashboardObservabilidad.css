@@ -1,0 +1,90 @@
+.dashboard-observabilidad {
+  display: grid;
+  gap: 1rem;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.dashboard-header h1 {
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.grafana-link {
+  border: 1px solid var(--border-strong);
+  padding: 0.5rem 0.8rem;
+  text-decoration: none;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+}
+
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.dashboard-card {
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  padding: 0.8rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.dashboard-card-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.dashboard-card-value {
+  font-size: 1.2rem;
+  color: var(--text-primary);
+}
+
+.dashboard-block {
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  padding: 0.9rem;
+}
+
+.dashboard-block h2 {
+  margin: 0 0 0.8rem 0;
+  font-size: 0.95rem;
+}
+
+.endpoint-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.endpoint-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.grafana-iframe {
+  width: 100%;
+  min-height: 460px;
+  border: 1px solid var(--border);
+  background: #0d1117;
+}
+
+.dashboard-state {
+  color: var(--text-secondary);
+}
+
+.dashboard-state.error {
+  color: #ef4444;
+}

@@ -7,6 +7,7 @@ import {
 import type {
   AuthResponse,
   AuthUser,
+  DashboardStatsResponse,
   LoginRequest,
   RegisterRequest,
 } from "../types/api";
@@ -94,6 +95,12 @@ export async function register(
 
 export async function fetchCurrentUser(): Promise<AuthUser> {
   return apiFetch<AuthUser>("/auth/me", {
+    method: "GET",
+  });
+}
+
+export async function fetchDashboardStats(): Promise<DashboardStatsResponse> {
+  return apiFetch<DashboardStatsResponse>("/estadisticas/dashboard", {
     method: "GET",
   });
 }

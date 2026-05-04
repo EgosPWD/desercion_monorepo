@@ -51,8 +51,8 @@ scrape_configs:
   # NOTE: Requires /metrics endpoint in backend
   # Descomentar cuando el backend tenga /metrics configurado
   # ==========================================
-  # - job_name: backend
-  #   static_configs:
-  #     - targets: ['backend:8182']
-  #   metrics_path: '/metrics'
-  #   scrape_interval: 30s
+  - job_name: backend
+    static_configs:
+      - targets: ['backend:8182']
+    metrics_path: '/metrics'
+    scrape_interval: 30s

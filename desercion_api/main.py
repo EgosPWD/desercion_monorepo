@@ -1,6 +1,9 @@
 import os
+import logging
+import json
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
+from logging.handlers import HTTPHandler
 
 import joblib
 import numpy as np
@@ -14,6 +17,52 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
+
+# --- Configuración de logging estructurado ---
+def setup_logging():
+    """Configura logging estructurado para enviar a Loki."""
+    logger = logging.getLogger("desercion")
+    logger.setLevel(logging.INFO)
+    
+    # Limpiar handlers existentes
+    logger.handlers.clear()
+    
+    # Formato estructurado JSON
+    class StructuredFormatter(logging.Formatter):
+        def format(self, record):
+            log_obj = {
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "level": record.levelname,
+                "logger": record.name,
+                "message": record.getMessage(),
+                "module": record.module,
+                "function": record.funcName,
+                "line": record.lineno,
+            }
+            if record.exc_info:
+                log_obj["exception"] = self.formatException(record.exc_info)
+            return json.dumps(log_obj)
+    
+    # Console handler (Docker logs)
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(StructuredFormatter())
+    logger.addHandler(console_handler)
+    
+    # Loki HTTP handler (opcional)
+    loki_endpoint = os.getenv("LOKI_ENDPOINT")
+    if loki_endpoint:
+        loki_handler = HTTPHandler(
+            host=loki_endpoint.replace("http://", "").replace("https://", ""),
+            url=f"{loki_endpoint}/loki/api/v1/push",
+            method="POST",
+            secure=loki_endpoint.startswith("https://")
+        )
+        loki_handler.setFormatter(StructuredFormatter())
+        logger.addHandler(loki_handler)
+    
+    return logger
+
+logger = setup_logging()
 
 # --- Configuración de entorno ---
 API_PORT = int(os.getenv("PORT", "8182"))
@@ -149,13 +198,13 @@ if not os.path.exists(scaler_path):
 try:
     modelo = joblib.load(model_path)
     scaler = joblib.load(scaler_path)
-    print("✅ Modelo y scaler cargados correctamente.")
+    logger.info("✅ Modelo y scaler cargados correctamente.")
 
     try:
         init_db()
-        print("✅ Base de datos inicializada correctamente.")
+        logger.info("✅ Base de datos inicializada correctamente.")
     except Exception as e_db:
-        print(f"⚠️ No se pudo inicializar la base de datos: {e_db}")
+        logger.error(f"⚠️ No se pudo inicializar la base de datos: {e_db}")
 
     try:
         explainer = shap.LinearExplainer(
@@ -164,9 +213,9 @@ try:
                 data=np.zeros((1, len(EXPECTED_COLUMN_ORDER)))
             ),
         )
-        print("✅ Explainer SHAP (Linear) inicializado correctamente.")
+        logger.info("✅ Explainer SHAP (Linear) inicializado correctamente.")
     except Exception as e_shap:
-        print(f"⚠️ LinearExplainer no disponible: {e_shap}")
+        logger.warning(f"⚠️ LinearExplainer no disponible: {e_shap}")
         explainer = None
 
 except Exception as e:
@@ -433,7 +482,7 @@ def guardar_prediccion_db(
         db.add(registro)
         db.commit()
     except Exception as e:
-        print(f"⚠️ Error al guardar predicción en DB: {e}")
+        logger.error(f"⚠️ Error al guardar predicción en DB: {e}")
     finally:
         try:
             db.close()
@@ -628,7 +677,7 @@ def predecir(datos: DatosEntrada, usuario: Usuario = Depends(get_current_user)):
                     for item in caracteristicas_importantes:
                         del item["impacto_absoluto"]
         except Exception as e_shap:
-            print(f"⚠️ Error al calcular interpretabilidad: {e_shap}")
+            logger.error(f"⚠️ Error al calcular interpretabilidad: {e_shap}")
 
         try:
             guardar_prediccion_db(
@@ -729,7 +778,7 @@ def predecir_lote(lote: LoteEstudiantes, usuario: Usuario = Depends(get_current_
             db.bulk_save_objects(registros)
             db.commit()
         except Exception as e:
-            print(f"⚠️ Error al guardar lote en DB: {e}")
+            logger.error(f"⚠️ Error al guardar lote en DB: {e}")
         finally:
             try:
                 db.close()

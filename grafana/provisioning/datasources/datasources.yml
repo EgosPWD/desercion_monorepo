@@ -1,0 +1,26 @@
+# Grafana Datasources Configuration
+# Configura automáticamente Loki y Prometheus como datasources
+
+apiVersion: 1
+
+datasources:
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    isDefault: true
+    editable: true
+    jsonData:
+      timeout: 60
+      manageAlerts: true
+      alertmanagerUid: ''
+      nodataposition: true
+
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    editable: true
+    jsonData:
+      timeInterval: '15'
+      queryTimeout: '60'

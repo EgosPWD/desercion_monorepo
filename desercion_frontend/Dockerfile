@@ -23,4 +23,4 @@ ENV PORT=3020
 
 EXPOSE 3020
 
-CMD ["sh", "-c", "serve -s dist -l ${PORT}"]
+CMD ["sh", "-c", "serve -s dist -l tcp://0.0.0.0:${PORT}"]

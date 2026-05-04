@@ -1,0 +1,121 @@
+# Promtail Configuration - Deserción Project
+# Recopila logs de todos los servicios y los envia a Loki
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # ==========================================
+  # BACKEND (FastAPI/Python)
+  # ==========================================
+  - job_name: backend
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        filters:
+          - name: name
+            values: ['desercion_backend']
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/desercion_backend'
+        action: keep
+      - target_label: service
+        replacement: backend
+      - target_label: app
+        replacement: desercion
+      - target_label: env
+        replacement: production
+
+  # ==========================================
+  # FRONTEND (React)
+  # ==========================================
+  - job_name: frontend
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        filters:
+          - name: name
+            values: ['desercion_frontend']
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/desercion_frontend'
+        action: keep
+      - target_label: service
+        replacement: frontend
+      - target_label: app
+        replacement: desercion
+      - target_label: env
+        replacement: production
+
+  # ==========================================
+  # POSTGRES
+  # ==========================================
+  - job_name: postgres
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        filters:
+          - name: name
+            values: ['desercion_db']
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/desercion_db'
+        action: keep
+      - target_label: service
+        replacement: postgres
+      - target_label: app
+        replacement: desercion
+      - target_label: env
+        replacement: production
+
+  # ==========================================
+  # LOKI
+  # ==========================================
+  - job_name: loki
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          service: loki
+          app: desercion
+          env: production
+
+  # ==========================================
+  # PROMETHEUS
+  # ==========================================
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          service: prometheus
+          app: desercion
+          env: production
+
+  # ==========================================
+  # NODE EXPORTER
+  # ==========================================
+  - job_name: node-exporter
+    static_configs:
+      - targets:
+          - node-exporter:9100
+        labels:
+          service: node-exporter
+          app: desercion
+          env: production
+
+  # ==========================================
+  # CADVISOR
+  # ==========================================
+  - job_name: cadvisor
+    static_configs:
+      - targets:
+          - cadvisor:8080
+        labels:
+          service: cadvisor
+          app: desercion
+          env: production

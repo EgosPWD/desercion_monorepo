@@ -1,0 +1,58 @@
+# Prometheus Configuration - Deserción Project
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'desercion'
+    environment: 'production'
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+rule_files:
+  - '/etc/prometheus/rules/*.yml'
+
+scrape_configs:
+  # ==========================================
+  # PROMETHEUS SELF-MONITORING
+  # ==========================================
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # ==========================================
+  # NODE EXPORTER (system metrics)
+  # ==========================================
+  - job_name: node-exporter
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # ==========================================
+  # CADVISOR (container metrics)
+  # ==========================================
+  - job_name: cadvisor
+    static_configs:
+      - targets: ['cadvisor:8080']
+    metrics_path: '/metrics'
+
+  # ==========================================
+  # LOKI (log system metrics)
+  # ==========================================
+  - job_name: loki
+    static_configs:
+      - targets: ['loki:3100']
+    metrics_path: '/metrics'
+
+  # ==========================================
+  # BACKEND (FastAPI custom metrics)
+  # NOTE: Requires /metrics endpoint in backend
+  # Descomentar cuando el backend tenga /metrics configurado
+  # ==========================================
+  # - job_name: backend
+  #   static_configs:
+  #     - targets: ['backend:8182']
+  #   metrics_path: '/metrics'
+  #   scrape_interval: 30s

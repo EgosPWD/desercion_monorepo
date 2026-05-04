@@ -1,0 +1,15 @@
+# Dashboard provisioning para Grafana
+
+apiVersion: 1
+
+providers:
+  - name: 'Dashboards'
+    orgId: 1
+    folder: 'Desercion'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json
+      foldersFromFilesStructure: false

@@ -1,0 +1,18 @@
+groups:
+  - name: desercion_api
+    rules:
+      - alert: HighPredictionLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(desercion_http_request_duration_seconds_bucket{path="/predecir"}[5m])
+          ) > 0.001
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Latencia alta en /predecir (p95 > 100ms)"
+          description: |
+            El percentil 95 de latencia en el endpoint /predecir superó 100ms
+            durante al menos 1 minuto.
+            Valor actual: {{ $value | humanizeDuration }}
+            En producción el umbral es 1s — este valor está reducido para demo.
